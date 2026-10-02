@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑워치</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* 전통 색 — 쪽빛, 주홍, 치자, 석록, 먹, 한지, 기와 */
+  :root {
+    --jjok:#24496b;   --jjok-deep:#14273a;
+    --ju:#b23a2b;     --chija:#d9a43a;
+    --nok:#2e6b5e;    --meok:#26221f;
+    --hanji:#f4ecd8;  --hanji-2:#ebdfc3;
+    --giwa:#3b3f44;   --stone:#9a968c;
+    --muted:#8a7a5f;  --line:#cdbb94;
+    --plum:#f3c6cf;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; }
+  body {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:150px 16px 110px; overflow-x:hidden;
+    font-family:"Gowun Batang","Batang",serif; color:var(--meok);
+    background:radial-gradient(ellipse at 72% 12%, rgba(217,164,58,.22), transparent 40%),
+               linear-gradient(180deg, var(--jjok-deep) 0%, var(--jjok) 70%, #3b5f78 100%);
+  }
+
+  /* 수묵 산수 배경 */
+  .sansu { position:fixed; inset:auto 0 0 0; width:100%; height:55vh; z-index:0; pointer-events:none; }
+  /* 후원의 보름달 — 지붕 위 하늘에 걸림 */
+  .moon  { position:absolute; top:-128px; right:18px; width:84px; height:84px; border-radius:50%; z-index:0;
+           background:
+             radial-gradient(circle at 34% 38%, rgba(201,170,110,.35) 0 7px, transparent 8px),
+             radial-gradient(circle at 62% 60%, rgba(201,170,110,.28) 0 10px, transparent 11px),
+             radial-gradient(circle at 58% 28%, rgba(201,170,110,.22) 0 4px, transparent 5px),
+             radial-gradient(circle at 40% 40%, #fffaea, #ecdcaf);
+           box-shadow:0 0 30px 8px rgba(251,243,220,.45), 0 0 90px 30px rgba(251,243,220,.18);
+           animation:moonglow 6s ease-in-out infinite; }
+  @keyframes moonglow { 50% { box-shadow:0 0 36px 12px rgba(251,243,220,.55), 0 0 110px 40px rgba(251,243,220,.22); } }
+  .cloud { position:absolute; top:-78px; right:-6px; width:120px; height:16px; border-radius:16px; z-index:1;
+           background:linear-gradient(90deg, transparent, rgba(220,226,232,.55) 25%, rgba(220,226,232,.55) 75%, transparent);
+           filter:blur(2px); animation:cloud 14s ease-in-out infinite alternate; }
+  @keyframes cloud { to { transform:translateX(-40px); } }
+  @media (prefers-reduced-motion: reduce) { .moon, .cloud { animation:none; } }
+
+  /* 연못과 달빛 반영 */
+  .pond { position:fixed; left:0; right:0; bottom:0; height:24vh; z-index:0; pointer-events:none; overflow:hidden;
+          background:linear-gradient(180deg, #1c3a4f 0%, #10283a 45%, #0a1824 100%);
+          box-shadow:0 -2px 0 rgba(251,243,220,.12), 0 -14px 30px rgba(10,24,36,.6); }
+  .pond::before { content:""; position:absolute; inset:0;
+          background:repeating-linear-gradient(180deg, rgba(251,243,220,.05) 0 1px, transparent 1px 9px); }
+  .glow { position:absolute; top:0; left:var(--moon-x, 88vw); width:240px; height:100%; transform:translateX(-50%);
+          background:radial-gradient(ellipse at 50% 0%, rgba(251,243,220,.28), transparent 70%); }
+  .reflect { position:absolute; top:6px; left:var(--moon-x, 88vw); transform:translateX(-50%);
+             display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .reflect span { display:block; height:3px; border-radius:3px; filter:blur(.6px);
+                  background:linear-gradient(90deg, transparent, #fbf3dc 30%, #f2dfa6 70%, transparent);
+                  animation:shimmer 3.2s ease-in-out infinite; }
+  .reflect span:nth-child(1) { width:64px; }
+  .reflect span:nth-child(2) { width:52px; animation-delay:-.4s; }
+  .reflect span:nth-child(3) { width:70px; animation-delay:-.9s; opacity:.85; }
+  .reflect span:nth-child(4) { width:44px; animation-delay:-1.3s; opacity:.75; }
+  .reflect span:nth-child(5) { width:60px; animation-delay:-1.8s; opacity:.6; }
+  .reflect span:nth-child(6) { width:34px; animation-delay:-2.2s; opacity:.5; }
+  .reflect span:nth-child(7) { width:48px; animation-delay:-2.6s; opacity:.4; }
+  .reflect span:nth-child(8) { width:26px; animation-delay:-3s;   opacity:.3; }
+  @keyframes shimmer {
+    0%,100% { transform:translateX(0) scaleX(1); opacity:var(--o,.9); }
+    50%     { transform:translateX(6px) scaleX(.75); opacity:.45; }
+  }
+  .ripple { position:absolute; left:var(--moon-x, 88vw); top:30%; width:20px; height:6px; margin-left:-10px;
+            border:1px solid rgba(251,243,220,.5); border-radius:50%; animation:ripple 6s ease-out infinite; }
+  .ripple.r2 { animation-delay:-3s; top:55%; left:calc(var(--moon-x, 88vw) - 55px); }
+  @keyframes ripple { 0% { transform:scale(.3); opacity:.8; } 100% { transform:scale(7); opacity:0; } }
+  .lotus { position:absolute; width:100%; height:100%; }
+  @media (prefers-reduced-motion: reduce) { .reflect span, .ripple { animation:none; } }
+
+  /* 매화 꽃잎 */
+  .petal { position:fixed; top:-20px; width:10px; height:10px; z-index:1; pointer-events:none;
+           background:var(--plum); border-radius:60% 0 60% 0; opacity:.85; animation:fall linear infinite; }
+  @keyframes fall {
+    0%   { transform:translate(0,0) rotate(0); }
+    100% { transform:translate(var(--drift), 110vh) rotate(540deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .petal { display:none; } }
+
+  /* 전각 — 지붕 · 기둥 · 기단 */
+  .hall { position:relative; z-index:2; width:100%; max-width:440px; }
+  .roof { display:block; width:calc(100% + 48px); margin:0 -24px -2px; height:auto; filter:drop-shadow(0 6px 6px rgba(0,0,0,.35)); }
+  .card {
+    position:relative;
+    background:repeating-linear-gradient(0deg, rgba(120,95,50,.035) 0 1px, transparent 1px 5px), var(--hanji);
+    border-left:12px solid var(--ju); border-right:12px solid var(--ju);
+    box-shadow:inset 3px 0 0 var(--chija), inset -3px 0 0 var(--chija), 0 20px 40px rgba(0,0,0,.45);
+    padding:18px 22px 22px;
+  }
+  .base { height:20px; margin:0 -14px; border-radius:2px;
+          background:linear-gradient(90deg, transparent 0 59px, rgba(0,0,0,.25) 59px 60px) 0 0/60px 100%, var(--stone);
+          box-shadow:0 2px 0 #6f6b62, 0 10px 20px rgba(0,0,0,.4); }
+
+  /* 현판 */
+  .title { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:4px; }
+  h1 { margin:0; font-family:"Song Myung","Batang",serif; font-weight:400; font-size:36px; letter-spacing:.18em; padding-left:.18em; }
+  h1 ruby { ruby-position:under; margin:0 .06em; }
+  h1 rt { font-family:"Gowun Batang","Batang",serif; font-size:12px; color:var(--ju); letter-spacing:0; padding-top:4px; }
+  .seal { width:38px; height:38px; display:grid; grid-template-columns:1fr; place-items:center;
+          background:var(--ju); color:var(--hanji); font-family:"Song Myung",serif; font-size:14px; line-height:1;
+          border-radius:4px; transform:rotate(-5deg); box-shadow:inset 0 0 0 2px var(--hanji), inset 0 0 0 3px var(--ju); padding:3px 0; }
+  .title { margin-bottom:16px; }
+  .sub-title { text-align:center; font-family:"Song Myung","Batang",serif; font-size:clamp(20px,6vw,26px); color:var(--ju);
+               letter-spacing:.25em; text-indent:.25em; margin:0 0 10px; padding-bottom:8px;
+               border-bottom:1px solid var(--line); }
+
+  /* 꽃살문 시계판 */
+  .lattice {
+    padding:12px; margin-bottom:22px; border:3px solid var(--meok);
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect width='24' height='24' fill='%23b07a4f'/%3E%3Cpath d='M0 0L24 24M24 0L0 24' stroke='%23704326' stroke-width='3'/%3E%3Cg fill='%23e8c99a' stroke='%23704326' stroke-width='1.2'%3E%3Ccircle cx='12' cy='12' r='4.2'/%3E%3Ccircle cx='0' cy='0' r='4.2'/%3E%3Ccircle cx='24' cy='0' r='4.2'/%3E%3Ccircle cx='0' cy='24' r='4.2'/%3E%3Ccircle cx='24' cy='24' r='4.2'/%3E%3C/g%3E%3Cg fill='%23b23a2b'%3E%3Ccircle cx='12' cy='12' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  .face { background:#faf4e3; border:2px solid var(--meok); padding:18px 8px 14px; text-align:center;
+          box-shadow:inset 0 0 0 4px #faf4e3, inset 0 0 0 5px var(--chija); }
+  .time { font-variant-numeric:tabular-nums; font-size:clamp(36px,11vw,54px); font-weight:700; letter-spacing:1px; }
+  .time small { font-size:.5em; color:var(--ju); }
+  .state { margin-top:4px; font-size:12px; color:var(--muted); letter-spacing:.35em; }
+  .sigak { margin-top:8px; font-size:13px; color:var(--jjok); }
+  .sigak b { font-family:"Song Myung",serif; font-weight:400; font-size:16px; color:var(--ju); }
+
+  /* 버튼 */
+  .btns { display:flex; gap:12px; }
+  button {
+    position:relative; flex:1; padding:14px 4px 12px; cursor:pointer; overflow:hidden;
+    font:inherit; font-size:17px; font-weight:700; letter-spacing:.3em; text-indent:.3em;
+    color:var(--hanji); background:var(--jjok); border:2px solid var(--meok); border-radius:3px;
+    box-shadow:2px 3px 0 var(--meok); transition:transform .08s, box-shadow .08s;
+  }
+  /* 단청 머리초 띠 */
+  button::before { content:""; position:absolute; left:0; right:0; top:0; height:5px;
+    background:repeating-linear-gradient(90deg, var(--nok) 0 8px, var(--chija) 8px 11px, var(--ju) 11px 19px, var(--hanji) 19px 22px); }
+  button:active:not(:disabled) { transform:translate(2px,3px); box-shadow:0 0 0 var(--meok); }
+  button.stop { background:var(--ju); }
+  button.sub  { background:var(--hanji-2); color:var(--meok); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button:focus-visible { outline:3px solid var(--chija); outline-offset:2px; }
+
+  /* 기록 */
+  ul { list-style:none; margin:20px 0 0; padding:0; max-height:210px; overflow-y:auto; border-top:2px solid var(--meok); }
+  li { display:flex; justify-content:space-between; gap:8px; padding:9px 4px; border-bottom:1px dashed var(--line);
+       font-variant-numeric:tabular-nums; font-size:15px; }
+  li span:first-child { color:var(--muted); min-width:4em; }
+  li.best  { color:var(--nok); font-weight:700; }
+  li.worst { color:var(--ju);  font-weight:700; }
+  .hint { text-align:center; color:var(--muted); font-size:12px; margin-top:14px; }
+
+  /* ───────── 스큐어모피즘: 실제 재질(한지 · 옻칠 나무 · 유리 · 돌 · 인주)의 질감과 깊이 ───────── */
+  :root {
+    --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .3 0 0 0 0 .18 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --fiber:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .45 0 0 0 0 .28 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6 .01' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 0 0 0 0 0 0 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* 한지 판 — 섬유결과 미세한 요철 */
+  .card {
+    border-left:14px solid transparent; border-right:14px solid transparent; background-clip:padding-box;
+    background:var(--fiber), var(--noise),
+               radial-gradient(ellipse at 50% 30%, #f8f1df 0%, #efe4c8 70%, #e4d5b2 100%);
+    box-shadow:inset 0 10px 18px -8px rgba(60,40,20,.45), inset 0 -8px 14px -8px rgba(60,40,20,.3),
+               0 24px 44px rgba(0,0,0,.55);
+  }
+  /* 옻칠한 둥근 기둥 */
+  .card::before, .card::after {
+    content:""; position:absolute; top:0; bottom:0; width:14px; pointer-events:none;
+    background:var(--grain),
+      linear-gradient(90deg, #5e150e 0%, #9a2c20 22%, #d0574a 42%, #e98272 50%, #c24638 60%, #8a2419 82%, #4d100a 100%);
+    box-shadow:0 0 6px rgba(0,0,0,.45);
+  }
+  .card::before { left:-14px; } .card::after { right:-14px; }
+
+  /* 현판 — 옻칠 나무판에 금박 음각 글씨 */
+  .sub-title {
+    position:relative; display:block; width:max-content; max-width:100%; margin:0 auto 14px; padding:9px 18px 9px;
+    border:0; border-radius:4px; color:#e7c66e;
+    background:var(--grain), linear-gradient(180deg, #3d2a1c, #24170e 60%, #1a100a);
+    box-shadow:0 0 0 2px #8a6a2c, 0 0 0 4px #2a1b10, 0 0 0 5px #b8913e,
+               inset 0 1px 0 rgba(255,220,150,.25), inset 0 -2px 4px rgba(0,0,0,.6),
+               0 8px 14px rgba(0,0,0,.45);
+    text-shadow:0 -1px 0 rgba(0,0,0,.8), 0 1px 0 rgba(255,236,170,.35), 0 0 8px rgba(231,198,110,.35);
+  }
+
+  /* 먹 글씨가 한지에 스민 느낌 */
+  h1 { color:#1e1a17; text-shadow:0 1px 0 rgba(255,255,255,.65), 0 0 1px rgba(30,26,23,.6); }
+
+  /* 인주 도장 — 번지고 빈 자리가 있는 인영 */
+  .seal {
+    background:radial-gradient(circle at 30% 30%, #c8453a, #a8322a 60%, #8e2820);
+    box-shadow:inset 0 0 0 2px rgba(244,236,216,.9), inset 0 0 0 3px #a8322a, inset 0 0 6px rgba(0,0,0,.35);
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 2.1'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23m)'/%3E%3C/svg%3E");
+            mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 2.1'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+
+  /* 꽃살문 — 깎아 낸 나무의 입체감 */
+  .lattice {
+    border:0; border-radius:3px; padding:14px;
+    background-image:linear-gradient(160deg, rgba(255,235,200,.18), rgba(0,0,0,.22)), var(--grain),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect width='24' height='24' fill='%23a56d43'/%3E%3Cpath d='M0 0L24 24M24 0L0 24' stroke='%235a3218' stroke-width='3.4'/%3E%3Cpath d='M0 0L24 24M24 0L0 24' stroke='%23c99266' stroke-width='1' transform='translate(-.8 -.8)'/%3E%3Cg fill='%23e3c193' stroke='%235a3218' stroke-width='1.2'%3E%3Ccircle cx='12' cy='12' r='4.4'/%3E%3Ccircle cx='0' cy='0' r='4.4'/%3E%3Ccircle cx='24' cy='0' r='4.4'/%3E%3Ccircle cx='0' cy='24' r='4.4'/%3E%3Ccircle cx='24' cy='24' r='4.4'/%3E%3C/g%3E%3Cg fill='%23fff3d6' opacity='.55'%3E%3Ccircle cx='10.8' cy='10.8' r='1.6'/%3E%3C/g%3E%3Cg fill='%23b23a2b'%3E%3Ccircle cx='12' cy='12' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+    box-shadow:0 0 0 2px #3a2212, inset 2px 2px 0 rgba(255,225,180,.35), inset -2px -2px 0 rgba(0,0,0,.45),
+               inset 0 0 0 5px rgba(58,34,18,.35), 0 10px 18px rgba(40,25,10,.45);
+  }
+
+  /* 시계판 — 움푹 들어간 한지 위에 유리를 덮은 느낌 */
+  .face {
+    position:relative; overflow:hidden; border:0; border-radius:2px;
+    background:var(--noise), radial-gradient(ellipse at 50% 40%, #fffaec, #efe3c4);
+    box-shadow:inset 0 0 0 1px #3a2212, inset 0 6px 14px rgba(40,25,10,.45), inset 0 -3px 8px rgba(40,25,10,.2),
+               inset 0 0 0 6px rgba(250,244,227,.0), 0 1px 0 rgba(255,230,190,.4);
+  }
+  .face::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 28%, transparent 29%, transparent 70%, rgba(255,255,255,.08) 71%, transparent 85%); }
+  .time { color:#221d19; text-shadow:0 1px 0 rgba(255,255,255,.9), 0 -1px 0 rgba(0,0,0,.18), 0 3px 6px rgba(40,25,10,.18); }
+
+  /* 버튼 — 옻칠한 나무 단추, 누르면 실제로 눌려 들어감 */
+  .btns { gap:14px; padding-bottom:6px; }
+  button {
+    border:1px solid rgba(0,0,0,.6); border-radius:6px; padding:15px 4px 12px;
+    background-image:var(--grain), linear-gradient(180deg, #3f709a 0%, #2a5378 45%, #1c3a57 100%);
+    background-color:transparent;
+    text-shadow:0 -1px 0 rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.15);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 3px rgba(0,0,0,.35),
+               0 5px 0 #10233a, 0 8px 12px rgba(0,0,0,.4);
+    transition:transform .07s, box-shadow .07s;
+  }
+  button::before { top:1px; left:1px; right:1px; height:5px; border-radius:5px 5px 0 0; opacity:.9;
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,.35); }
+  button:active:not(:disabled) { transform:translateY(4px);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.1), 0 1px 0 #10233a, 0 2px 4px rgba(0,0,0,.3); }
+  button.stop {
+    background-image:var(--grain), linear-gradient(180deg, #d9604f 0%, #b23a2b 45%, #84241a 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 3px rgba(0,0,0,.35), 0 5px 0 #5a160f, 0 8px 12px rgba(0,0,0,.4); }
+  button.stop:active:not(:disabled) {
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.45), 0 1px 0 #5a160f, 0 2px 4px rgba(0,0,0,.3); }
+  button.sub {
+    color:#3a2a1a; text-shadow:0 1px 0 rgba(255,255,255,.7);
+    background-image:var(--grain), linear-gradient(180deg, #e9c99c 0%, #cfa774 45%, #b0864f 100%);
+    box-shadow:inset 0 1px 0 rgba(255,245,220,.7), inset 0 -2px 3px rgba(80,50,20,.35), 0 5px 0 #6e4d26, 0 8px 12px rgba(0,0,0,.35); }
+  button.sub:active:not(:disabled) {
+    box-shadow:inset 0 2px 5px rgba(80,50,20,.5), 0 1px 0 #6e4d26, 0 2px 4px rgba(0,0,0,.3); }
+  button:disabled { opacity:.55; filter:saturate(.5); }
+
+  /* 기록 — 한지에 오목하게 판 서랍 */
+  ul { border-top:0; margin-top:22px; border-radius:4px; padding:2px 8px;
+       background:rgba(120,90,50,.06);
+       box-shadow:inset 0 3px 8px rgba(60,40,20,.3), inset 0 -1px 0 rgba(255,255,255,.6); }
+  ul:empty { display:none; }
+  li { border-bottom:1px solid rgba(120,90,50,.18); box-shadow:0 1px 0 rgba(255,255,255,.55); }
+  li:last-child { border-bottom:0; box-shadow:none; }
+
+  /* 기단 — 다듬은 화강암 */
+  .base { height:22px;
+    background:linear-gradient(90deg, transparent 0 58px, rgba(0,0,0,.35) 58px 59px, rgba(255,255,255,.25) 59px 60px) 0 0/60px 100%,
+               var(--noise), linear-gradient(180deg, #b9b5aa, #96928a 60%, #7d7970);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(0,0,0,.25), 0 3px 0 #5f5b53, 0 12px 22px rgba(0,0,0,.5); }
+
+  /* 노리개 */
+  .norigae { position:absolute; right:30px; bottom:-92px; width:34px; height:96px; z-index:3; pointer-events:none;
+             transform-origin:50% 0; animation:sway 4s ease-in-out infinite; }
+  @keyframes sway { 50% { transform:rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { .norigae { animation:none; } }
+</style>
+</head>
+<body>
+
+<svg class="sansu" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M0 260 Q120 120 240 220 Q330 90 460 210 Q560 140 650 230 Q780 70 900 200 Q1020 130 1200 220 V500 H0Z" fill="#1d3447" opacity=".55"/>
+  <path d="M0 330 Q150 220 280 310 Q400 210 540 300 Q660 240 760 320 Q900 200 1040 300 Q1120 260 1200 300 V500 H0Z" fill="#162a3a" opacity=".75"/>
+  <path d="M0 400 Q200 330 380 390 Q560 340 720 400 Q900 350 1200 390 V500 H0Z" fill="#0f1f2b"/>
+  <g fill="#0b1720">
+    <rect x="96" y="300" width="7" height="110"/>
+    <path d="M60 330 Q100 296 140 326 Q100 316 60 330Z"/><path d="M66 306 Q100 276 134 302 Q100 294 66 306Z"/>
+    <rect x="1086" y="300" width="7" height="100"/>
+    <path d="M1050 326 Q1090 292 1130 322 Q1090 312 1050 326Z"/><path d="M1058 302 Q1090 272 1122 298 Q1090 290 1058 302Z"/>
+  </g>
+</svg>
+
+<div class="pond" aria-hidden="true">
+  <div class="glow"></div>
+  <div class="reflect"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="ripple"></div><div class="ripple r2"></div>
+  <svg class="lotus" viewBox="0 0 1200 200" preserveAspectRatio="none">
+    <g fill="#2f5a45" opacity=".9">
+      <ellipse cx="120" cy="120" rx="34" ry="8"/><ellipse cx="170" cy="150" rx="22" ry="6"/>
+      <ellipse cx="420" cy="170" rx="28" ry="7"/><ellipse cx="640" cy="110" rx="20" ry="5"/>
+      <ellipse cx="760" cy="160" rx="30" ry="8"/><ellipse cx="1120" cy="140" rx="26" ry="7"/>
+    </g>
+    <g fill="#f3c6cf" opacity=".9">
+      <path d="M120 112 Q114 100 120 92 Q126 100 120 112Z"/>
+      <path d="M760 152 Q754 140 760 132 Q766 140 760 152Z"/>
+    </g>
+  </svg>
+</div>
+
+<div class="hall">
+  <div class="moon" id="moon" aria-hidden="true"></div>
+  <div class="cloud" aria-hidden="true"></div>
+  <!-- 기와지붕 · 처마 · 단청 -->
+  <svg class="roof" viewBox="0 0 488 96" aria-hidden="true">
+    <defs>
+      <pattern id="giwa" width="9" height="60" patternUnits="userSpaceOnUse">
+        <rect width="9" height="60" fill="#3b3f44"/><rect x="0" width="4" height="60" fill="#4b5056"/>
+      </pattern>
+    </defs>
+    <!-- 용마루와 취두 -->
+    <path d="M118 6 H370 L378 0 V14 H110 V0Z" fill="#26221f"/>
+    <!-- 지붕면: 처마 끝이 하늘로 들린 곡선 -->
+    <path d="M110 14 H378 Q408 42 478 46 Q486 44 488 34 Q484 60 456 64 H32 Q4 60 0 34 Q2 44 10 46 Q80 42 110 14Z" fill="url(#giwa)"/>
+    <path d="M32 64 H456 Q484 60 488 34 Q486 50 470 56 Q440 62 420 62 H68 Q48 62 18 56 Q2 50 0 34 Q4 60 32 64Z" fill="#26221f"/>
+    <!-- 서까래 단청 -->
+    <rect x="34" y="64" width="420" height="12" fill="#2e6b5e"/>
+    <g id="rafter">
+      <circle cx="44" cy="70" r="4.5" fill="#d9a43a"/><circle cx="44" cy="70" r="2.2" fill="#b23a2b"/>
+    </g>
+    <!-- 창방 -->
+    <rect x="24" y="76" width="440" height="10" fill="#b23a2b"/>
+    <rect x="24" y="86" width="440" height="4" fill="#26221f"/>
+    <g fill="#f4ecd8" opacity=".9">
+      <rect x="60" y="79" width="40" height="4" rx="2"/><rect x="224" y="79" width="40" height="4" rx="2"/><rect x="388" y="79" width="40" height="4" rx="2"/>
+    </g>
+  </svg>
+
+  <main class="card">
+    <div class="sub-title">창덕궁 후원의 시간</div>
+    <div class="title">
+      <h1 aria-label="스탑워치"><ruby>斯<rt>스</rt></ruby><ruby>塔<rt>탑</rt></ruby><ruby>窩<rt>워</rt></ruby><ruby>値<rt>치</rt></ruby></h1>
+      <div class="seal" aria-hidden="true">秘<br>苑</div>
+    </div>
+
+    <div class="lattice">
+      <div class="face">
+        <div class="time" id="display" aria-live="off">00:00:00<small>.00</small></div>
+        <div class="state" id="state">대기</div>
+        <div class="sigak" id="sigak"></div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button id="toggle">시작</button>
+      <button id="lap" class="sub" disabled>기록</button>
+      <button id="reset" class="sub" disabled>비움</button>
+    </div>
+
+    <ul id="laps"></ul>
+    <div class="hint">Space 시작·정지 &nbsp;|&nbsp; L 기록 &nbsp;|&nbsp; R 비움</div>
+
+    <!-- 노리개 -->
+    <svg class="norigae" viewBox="0 0 34 96" aria-hidden="true">
+      <line x1="17" y1="0" x2="17" y2="18" stroke="#b23a2b" stroke-width="2"/>
+      <path d="M17 18 L27 28 L17 38 L7 28Z" fill="#b23a2b" stroke="#26221f"/>
+      <circle cx="17" cy="28" r="3" fill="#d9a43a"/>
+      <rect x="11" y="40" width="12" height="7" rx="3" fill="#2e6b5e"/>
+      <g stroke="#b23a2b" stroke-width="1.6">
+        <line x1="12" y1="47" x2="9" y2="94"/><line x1="15" y1="47" x2="14" y2="96"/>
+        <line x1="17" y1="47" x2="17" y2="96"/><line x1="19" y1="47" x2="20" y2="96"/><line x1="22" y1="47" x2="25" y2="94"/>
+      </g>
+    </svg>
+  </main>
+  <div class="base" aria-hidden="true"></div>
+</div>
+
+<script>
+(() => {
+  // 서까래 마구리 장식 반복
+  const rafter = document.getElementById('rafter');
+  for (let x = 58; x <= 444; x += 14) {
+    const g = rafter.cloneNode(true); g.removeAttribute('id');
+    g.setAttribute('transform', `translate(${x - 44},0)`);
+    rafter.parentNode.insertBefore(g, rafter.nextSibling);
+  }
+
+  // 연못의 달그림자를 달 위치에 맞춤
+  const moon = document.getElementById('moon');
+  const alignMoon = () => {
+    const r = moon.getBoundingClientRect();
+    document.documentElement.style.setProperty('--moon-x', (r.left + r.width / 2) + 'px');
+  };
+  alignMoon(); addEventListener('resize', alignMoon);
+
+  // 매화 꽃잎
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('span');
+      p.className = 'petal';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.setProperty('--drift', (Math.random() * 160 - 60) + 'px');
+      p.style.animationDuration = 9 + Math.random() * 9 + 's';
+      p.style.animationDelay = -Math.random() * 18 + 's';
+      const s = 7 + Math.random() * 6; p.style.width = p.style.height = s + 'px';
+      document.body.appendChild(p);
+    }
+  }
+
+  // 십이시(十二時)
+  const SI = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+  const HAN = '子丑寅卯辰巳午未申酉戌亥';
+  const sigakEl = document.getElementById('sigak');
+  const updateSigak = () => {
+    const h = new Date().getHours(), k = (h + 1) % 24;
+    const i = Math.floor(k / 2);
+    sigakEl.innerHTML = `지금은 <b>${SI[i]}시(${HAN[i]}時)</b> ${k % 2 ? '정' : '초'}`;
+  };
+  updateSigak(); setInterval(updateSigak, 30000);
+
+  // 스탑워치
+  const $ = id => document.getElementById(id);
+  const display = $('display'), stateEl = $('state'), toggle = $('toggle'), lapBtn = $('lap'), resetBtn = $('reset'), list = $('laps');
+  let running = false, start = 0, elapsed = 0, raf = 0, laps = [], lastLap = 0;
+
+  const pad = (n, l = 2) => String(n).padStart(l, '0');
+  const fmt = ms => {
+    const cs = Math.floor(ms / 10) % 100, s = Math.floor(ms / 1000) % 60,
+          m = Math.floor(ms / 60000) % 60, h = Math.floor(ms / 3600000);
+    return `${pad(h)}:${pad(m)}:${pad(s)}<small>.${pad(cs)}</small>`;
+  };
+  const plain = ms => fmt(ms).replace(/<\/?small>/g, '');
+
+  const now = () => elapsed + (running ? performance.now() - start : 0);
+  const tick = () => { display.innerHTML = fmt(now()); raf = requestAnimationFrame(tick); };
+
+  function renderLaps() {
+    const splits = laps.map(l => l.split);
+    const best = Math.min(...splits), worst = Math.max(...splits);
+    list.innerHTML = laps.slice().reverse().map(l => {
+      const cls = laps.length > 1 ? (l.split === best ? 'best' : l.split === worst ? 'worst' : '') : '';
+      return `<li class="${cls}"><span>제${l.n}회</span><span>${plain(l.split)}</span><span>${plain(l.total)}</span></li>`;
+    }).join('');
+  }
+
+  function startStop() {
+    if (running) {
+      elapsed += performance.now() - start; running = false;
+      cancelAnimationFrame(raf); display.innerHTML = fmt(elapsed);
+      toggle.textContent = '계속'; toggle.classList.remove('stop'); lapBtn.disabled = true; stateEl.textContent = '멈춤';
+    } else {
+      start = performance.now(); running = true; tick();
+      toggle.textContent = '정지'; toggle.classList.add('stop');
+      lapBtn.disabled = false; resetBtn.disabled = false; stateEl.textContent = '흐르는 중';
+    }
+  }
+  function lap() {
+    if (!running) return;
+    const t = now();
+    laps.push({ n: laps.length + 1, split: t - lastLap, total: t });
+    lastLap = t; renderLaps();
+  }
+  function reset() {
+    running = false; cancelAnimationFrame(raf); elapsed = 0; lastLap = 0; laps = [];
+    display.innerHTML = fmt(0); list.innerHTML = ''; stateEl.textContent = '대기';
+    toggle.textContent = '시작'; toggle.classList.remove('stop');
+    lapBtn.disabled = true; resetBtn.disabled = true;
+  }
+
+  toggle.onclick = startStop; lapBtn.onclick = lap; resetBtn.onclick = reset;
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.code === 'Space') { e.preventDefault(); startStop(); }
+    else if (e.key.toLowerCase() === 'l') lap();
+    else if (e.key.toLowerCase() === 'r' && !resetBtn.disabled) reset();
+  });
+})();
+</script>
+</body>
+</html>
