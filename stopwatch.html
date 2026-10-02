@@ -22,7 +22,8 @@
   html, body { margin:0; }
   body {
     min-height:100vh; display:flex; align-items:center; justify-content:center;
-    padding:150px 16px 110px; overflow-x:hidden;
+    /* 위: 달이 걸릴 하늘(축척 --k 반영) · 아래: 연못 높이만큼 비워 연꽃이 가리지 않게 */
+    padding:calc(118px * var(--k, 1)) 16px calc(24vh + 6px); overflow-x:hidden;
     font-family:"Gowun Batang","Batang",serif; color:var(--meok);
     background:radial-gradient(ellipse at 72% 12%, rgba(217,164,58,.22), transparent 40%),
                linear-gradient(180deg, var(--jjok-deep) 0%, var(--jjok) 70%, #3b5f78 100%);
@@ -31,7 +32,7 @@
   /* 수묵 산수 배경 */
   .sansu { position:fixed; inset:auto 0 0 0; width:100%; height:55vh; z-index:0; pointer-events:none; }
   /* 후원의 보름달 — 지붕 위 하늘에 걸림 */
-  .moon  { position:absolute; top:-128px; right:18px; width:84px; height:84px; border-radius:50%; z-index:0;
+  .moon  { position:absolute; top:-112px; right:18px; width:84px; height:84px; border-radius:50%; z-index:0;
            background:
              radial-gradient(circle at 34% 38%, rgba(201,170,110,.35) 0 7px, transparent 8px),
              radial-gradient(circle at 62% 60%, rgba(201,170,110,.28) 0 10px, transparent 11px),
@@ -40,7 +41,7 @@
            box-shadow:0 0 30px 8px rgba(251,243,220,.45), 0 0 90px 30px rgba(251,243,220,.18);
            animation:moonglow 6s ease-in-out infinite; }
   @keyframes moonglow { 50% { box-shadow:0 0 36px 12px rgba(251,243,220,.55), 0 0 110px 40px rgba(251,243,220,.22); } }
-  .cloud { position:absolute; top:-78px; right:-6px; width:120px; height:16px; border-radius:16px; z-index:1;
+  .cloud { position:absolute; top:-64px; right:-6px; width:120px; height:16px; border-radius:16px; z-index:1;
            background:linear-gradient(90deg, transparent, rgba(220,226,232,.55) 25%, rgba(220,226,232,.55) 75%, transparent);
            filter:blur(2px); animation:cloud 14s ease-in-out infinite alternate; }
   @keyframes cloud { to { transform:translateX(-40px); } }
@@ -77,6 +78,17 @@
   @keyframes ripple { 0% { transform:scale(.3); opacity:.8; } 100% { transform:scale(7); opacity:0; } }
   .lotus { position:absolute; width:100%; height:100%; }
   @media (prefers-reduced-motion: reduce) { .reflect span, .ripple { animation:none; } }
+
+  /* 활짝 핀 연꽃 — 꽃잎이 하나씩 벌어짐 */
+  .flower { position:absolute; width:var(--s,56px); transform:translate(-50%,-80%);
+            filter:drop-shadow(0 0 6px rgba(251,243,220,.35)); }
+  .flower svg { display:block; width:100%; height:auto; overflow:visible; }
+  .flower .p { transform-box:fill-box; transform-origin:50% 100%;
+               transform:rotate(var(--r)); animation:bloom 2.4s cubic-bezier(.2,.7,.2,1) both; animation-delay:var(--d); }
+  @keyframes bloom { from { transform:rotate(0deg) scaleY(.55); opacity:.6; } to { transform:rotate(var(--r)) scaleY(1); opacity:1; } }
+  .flower .seed { animation:seed 1.2s ease-out 1.6s both; transform-box:fill-box; transform-origin:50% 50%; }
+  @keyframes seed { from { transform:scale(0); } to { transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .flower .p, .flower .seed { animation:none; } }
 
   /* 매화 꽃잎 */
   .petal { position:fixed; top:-20px; width:10px; height:10px; z-index:1; pointer-events:none;
@@ -261,6 +273,19 @@
                var(--noise), linear-gradient(180deg, #b9b5aa, #96928a 60%, #7d7970);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(0,0,0,.25), 0 3px 0 #5f5b53, 0 12px 22px rgba(0,0,0,.5); }
 
+  /* 세로 압축 — 달과 연못이 한 화면에 들어오도록 여백을 줄임 */
+  .card { padding:12px 20px 14px; }
+  .sub-title { margin-bottom:10px; padding:7px 16px; }
+  .title { margin-bottom:10px; }
+  h1 { font-size:32px; }
+  .lattice { margin-bottom:16px; padding:11px; }
+  .face { padding:12px 8px 10px; }
+  .sigak { margin-top:4px; }
+  button { padding:12px 4px 10px; }
+  ul { margin-top:14px; max-height:118px; }
+  .hint { margin-top:8px; }
+  .hall { transform-origin:50% 0; }
+
   /* 노리개 */
   .norigae { position:absolute; right:30px; bottom:-92px; width:34px; height:96px; z-index:3; pointer-events:none;
              transform-origin:50% 0; animation:sway 4s ease-in-out infinite; }
@@ -292,11 +317,8 @@
       <ellipse cx="420" cy="170" rx="28" ry="7"/><ellipse cx="640" cy="110" rx="20" ry="5"/>
       <ellipse cx="760" cy="160" rx="30" ry="8"/><ellipse cx="1120" cy="140" rx="26" ry="7"/>
     </g>
-    <g fill="#f3c6cf" opacity=".9">
-      <path d="M120 112 Q114 100 120 92 Q126 100 120 112Z"/>
-      <path d="M760 152 Q754 140 760 132 Q766 140 760 152Z"/>
-    </g>
   </svg>
+  <div id="lotusFlowers"></div>
 </div>
 
 <div class="hall">
@@ -382,7 +404,45 @@
     const r = moon.getBoundingClientRect();
     document.documentElement.style.setProperty('--moon-x', (r.left + r.width / 2) + 'px');
   };
-  alignMoon(); addEventListener('resize', alignMoon);
+  // 화면 높이에 맞춰 전각 전체를 축소 — 위로는 달, 아래로는 연못과 연꽃이 보이게
+  const hall = document.querySelector('.hall');
+  const fit = () => {
+    hall.style.zoom = 1;
+    const need  = hall.offsetHeight + 118;                  // 전각 + 달이 걸릴 하늘
+    const avail = innerHeight - innerHeight * .24 - 10;     // 연못 높이를 뺀 공간
+    const k = Math.max(.55, Math.min(1, avail / need));
+    hall.style.zoom = k;
+    document.documentElement.style.setProperty('--k', k);
+    alignMoon();
+  };
+  window.fitHall = fit;
+  fit(); addEventListener('resize', fit);
+  document.fonts && document.fonts.ready.then(fit);
+
+  // 연꽃 — 바깥 꽃잎부터 안쪽 꽃잎 순으로 벌어짐
+  const flowerSVG = id => {
+    const petal = (r, d, fill, h = 30) =>
+      `<path class="p" style="--r:${r}deg;--d:${d}s" fill="${fill}" stroke="#c7798a" stroke-width=".6"
+        d="M30 36 Q${21} ${36 - h * .55} 30 ${36 - h} Q${39} ${36 - h * .55} 30 36Z"/>`;
+    const back  = [-78, -52, 52, 78].map((r, i) => petal(r, .1 + i * .05, `url(#pb${id})`, 26)).join('');
+    const mid   = [-36, -14, 14, 36].map((r, i) => petal(r, .5 + i * .08, `url(#pm${id})`, 30)).join('');
+    const front = [-22, 0, 22].map((r, i) => petal(r, 1 + i * .1, `url(#pf${id})`, 24)).join('');
+    return `<svg viewBox="0 0 60 44" aria-hidden="true">
+      <defs>
+        <linearGradient id="pb${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e7a3b4"/><stop offset="1" stop-color="#f9dbe3"/></linearGradient>
+        <linearGradient id="pm${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f0b3c2"/><stop offset=".7" stop-color="#fde9ee"/><stop offset="1" stop-color="#e98aa1"/></linearGradient>
+        <linearGradient id="pf${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fbe4ea"/><stop offset=".75" stop-color="#fff6f8"/><stop offset="1" stop-color="#ef9db0"/></linearGradient>
+      </defs>
+      <ellipse cx="30" cy="38" rx="27" ry="5" fill="#2f5a45"/>
+      <ellipse cx="30" cy="37" rx="22" ry="3.4" fill="#3d7457"/>
+      ${back}${mid}
+      <g class="seed"><ellipse cx="30" cy="22" rx="5.5" ry="3" fill="#e2c14d"/><g fill="#9a7a1e"><circle cx="28" cy="21.6" r=".7"/><circle cx="30" cy="21" r=".7"/><circle cx="32" cy="21.6" r=".7"/><circle cx="30" cy="22.8" r=".7"/></g></g>
+      ${front}
+    </svg>`;
+  };
+  const lotusSpots = [{ x:10, y:62, s:58 }, { x:35, y:86, s:46 }, { x:63, y:82, s:62 }, { x:93, y:72, s:44 }];
+  document.getElementById('lotusFlowers').innerHTML = lotusSpots.map((p, i) =>
+    `<div class="flower" style="left:${p.x}%;top:${p.y}%;--s:${p.s}px">${flowerSVG(i)}</div>`).join('');
 
   // 매화 꽃잎
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -449,13 +509,13 @@
     if (!running) return;
     const t = now();
     laps.push({ n: laps.length + 1, split: t - lastLap, total: t });
-    lastLap = t; renderLaps();
+    lastLap = t; renderLaps(); if (laps.length <= 4) window.fitHall();
   }
   function reset() {
     running = false; cancelAnimationFrame(raf); elapsed = 0; lastLap = 0; laps = [];
     display.innerHTML = fmt(0); list.innerHTML = ''; stateEl.textContent = '대기';
     toggle.textContent = '시작'; toggle.classList.remove('stop');
-    lapBtn.disabled = true; resetBtn.disabled = true;
+    lapBtn.disabled = true; resetBtn.disabled = true; window.fitHall();
   }
 
   toggle.onclick = startStop; lapBtn.onclick = lap; resetBtn.onclick = reset;
